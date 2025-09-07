@@ -6,14 +6,9 @@ Autores: Adson Ribeiro e Rafaela Vasconcelos
 Dependencias: Tkinter, Numpy
 
 ```bash
-# mac
-brew install python-tk
 
 # ubuntu-based
-sudo apt-get install python-tk
-
-# arch-based
-sudo pacman -S tk
+sudo apt-get install python3-tk
 
 # poetry
 sudo apt install python3-poetry
