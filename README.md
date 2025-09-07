@@ -3,7 +3,7 @@ Trabalho final da disciplina de Computação Gráfica do curso CBSI - UFPA do an
 
 Autores: Adson Ribeiro e Rafaela Vasconcelos
 
-Dependencias: Tkinter
+Dependencias: Tkinter, Numpy
 
 ```bash
 # mac
@@ -16,5 +16,9 @@ sudo apt-get install python-tk
 sudo pacman -S tk
 
 # poetry
-poetry install
+sudo apt install python3-poetry
+
+# Numpy
+pip install numpy
+
 ```
