@@ -1,4 +1,5 @@
 import numpy as np
+import math
 
 
 class Rasterizacao:
@@ -125,8 +126,6 @@ class Projection(Rasterizacao):
             projecao = np.dot(matriz_proj, point)
             self.saida.append([projecao[x_saida], projecao[y_saida]])
 
-        self.saida = Polilinha(self.saida, fechar=True).saida
-
     def perspectiva(self, dist):
         for ponto in self.entrada:
             ponto.append(1)
@@ -147,15 +146,29 @@ class Projection(Rasterizacao):
             projecao = np.multiply(projecao, 1 / point[2])
             self.saida.append([round(projecao[0]), round(projecao[1])])
 
-        self.saida = Polilinha(self.saida, fechar=True).saida
+    def _oblique(self, L, alpha_deg=45):
+        """
+        Calcula uma projeção oblíqua genérica.
+        L=1 para Cavalier, L=0.5 para Cabinet.
+        """
+        alpha_rad = math.radians(alpha_deg)
+        for ponto in self.entrada:
+            ponto.append(1)
 
-        unicos = []
+        # Matriz de projeção oblíqua
+        matriz_proj = np.array([
+            [1, 0, L * math.cos(alpha_rad), 0],
+            [0, 1, L * math.sin(alpha_rad), 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 1]
+        ])
 
-        for ponto in self.saida:
-            if ponto[0] == ponto[1]:
-                if [ponto[0], ponto[1]] not in unicos:
-                    unicos.append([ponto[0], ponto[1]])
+        for point in self.entrada:
+            projecao = np.dot(matriz_proj, point)
+            self.saida.append([round(projecao[0]), round(projecao[1])])
 
-        unicos.pop(0)
+    def cavalier(self, alpha_deg=45):
+        self._oblique(L=1, alpha_deg=alpha_deg)
 
-        self.saida += Bresenham(unicos[0], unicos[1]).saida
+    def cabinet(self, alpha_deg=45):
+        self._oblique(L=0.5, alpha_deg=alpha_deg)

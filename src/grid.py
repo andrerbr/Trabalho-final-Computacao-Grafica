@@ -2,70 +2,65 @@ import tkinter as tk
 from Algorithms.index import *
 
 class Grid:
-    def __init__(self, window, numPixels, tamanhoTela):
+    def __init__(self, window, numPixels, tamanhoPixel):
         self.numPixels = numPixels
-        self.tamanhoTela = tamanhoTela
-        self.tamanhoPixel = int(self.tamanhoTela / self.numPixels)
         self.window = window
+        self.tamanhoPixel = tamanhoPixel
+        self.tamanhoTela = self.numPixels * self.tamanhoPixel
         self.drawnPoints = []
         self.xBox = [-(numPixels / 2), (numPixels / 2)]
         self.yBox = [-(numPixels / 2), (numPixels / 2)]
 
-        containerCanvas = tk.Frame(self.window)
+        self.containerCanvas = tk.Frame(self.window)
         self.tela = tk.Canvas(
-            containerCanvas, width=self.tamanhoTela, height=self.tamanhoTela
+            self.containerCanvas, width=self.tamanhoTela, height=self.tamanhoTela
         )
 
         self.clear()
 
         self.tela.pack()
-        containerCanvas.pack(padx=5, pady=5)
+
+    def get_frame(self):
+        return self.containerCanvas
 
     def drawClip(self):
         xMin, xMax = self.xBox
         yMin, yMax = self.yBox
-        xMin = ((round(self.numPixels / 2) + xMin) * self.tamanhoPixel) + 1
-        xMax = (
-            ((round(self.numPixels / 2) + xMax) * self.tamanhoPixel)
-            + self.tamanhoPixel
-            - 1
-        )
-        yMin = ((round(self.numPixels / 2) - yMin) * self.tamanhoPixel) - 1
-        yMax = (
-            ((round(self.numPixels / 2) - yMax) * self.tamanhoPixel)
-            - self.tamanhoPixel
-            + 1
-        )
 
-        self.tela.create_line(xMin, yMin, xMin, yMax, fill="#FF0000")
-        self.tela.create_line(xMin, yMax, xMax, yMax, fill="#FF0000")
-        self.tela.create_line(xMax, yMax, xMax, yMin, fill="#FF0000")
-        self.tela.create_line(xMax, yMin, xMin, yMin, fill="#FF0000")
+        # Converte as coordenadas lógicas da janela de recorte para coordenadas de tela
+        xMin_tela = (self.numPixels / 2 + xMin) * self.tamanhoPixel
+        xMax_tela = (self.numPixels / 2 + xMax) * self.tamanhoPixel
+        yMin_tela = (self.numPixels / 2 - yMin) * self.tamanhoPixel
+        yMax_tela = (self.numPixels / 2 - yMax) * self.tamanhoPixel
+
+        # Desenha o retângulo da janela de recorte
+        self.tela.create_rectangle(xMin_tela, yMax_tela, xMax_tela, yMin_tela, outline="#FF0000", width=1)
 
     def clear(self):
         self.drawnPoints = []
         self.tela.create_rectangle(
             0, 0, self.tamanhoTela + 1, self.tamanhoTela + 1, fill="#FFFFFF"
         )
-
-        self.drawClip()
-
-        for x in range(0, self.tamanhoTela, self.tamanhoPixel):
+ 
+        for x in range(0, self.tamanhoTela + 1, self.tamanhoPixel):
             self.tela.create_line(x, 0, x, self.tamanhoTela, fill="#808080")
-
-        for y in range(0, self.tamanhoTela, self.tamanhoPixel):
+ 
+        for y in range(0, self.tamanhoTela + 1, self.tamanhoPixel):
             self.tela.create_line(0, y, self.tamanhoTela, y, fill="#808080")
-
+ 
+        # Desenha a janela de recorte por cima de tudo
+        self.drawClip()
+ 
     def drawPixel(self, coords, fill="#000000"):
         x, y = coords
-        truex = (round(self.numPixels / 2) + x) * self.tamanhoPixel + 1
-        truey = (round(self.numPixels / 2) - y - 1) * self.tamanhoPixel + 1
+        truex = (self.numPixels / 2 + x) * self.tamanhoPixel
+        truey = (self.numPixels / 2 - y) * self.tamanhoPixel
 
         self.tela.create_rectangle(
             truex,
             truey,
-            truex + self.tamanhoPixel - 1,
-            truey + self.tamanhoPixel - 1,
+            truex + self.tamanhoPixel,
+            truey + self.tamanhoPixel,
             fill=fill,
             width=0,
         )
@@ -82,11 +77,9 @@ class Grid:
             p1 = int(entryx1.get()), int(entryy1.get())
             p2 = (int(entryx2.get()), int(entryy2.get()))
 
-            self.drawFromList(
-                cohenSutherland((p1, p2), tuple(self.xBox), tuple(self.yBox))
-            )
-
-            # self.drawFromList()
+            # Recorta a linha (usando os pontos de extremidade) e desenha o resultado.
+            # O próprio cohenSutherland chama o bres internamente.
+            self.drawFromList(cohenSutherland((p1, p2), tuple(self.xBox), tuple(self.yBox)))
 
         popup = tk.Toplevel(self.window, padx=5, pady=5)
         labelx1 = tk.Label(popup, text="Coordenada x do ponto 1: ")
@@ -112,7 +105,7 @@ class Grid:
         btnDraw = tk.Button(popup, text="Desenhar", command=run)
         btnDraw.grid(row=5, column=2)
 
-    def cricle(self):
+    def circle(self):
         def run():
             self.clear()
             center = (int(entryx.get()), int(entryy.get()))
@@ -400,11 +393,10 @@ class Grid:
 
     def adjustClippingBox(self):
         def run():
-            self.clear()
             self.xBox = [int(entryxmin.get()), int(entryxmax.get())]
             self.yBox = [int(entryymin.get()), int(entryymax.get())]
 
-            self.clear()
+            self.clear() # Limpa a tela e desenha a nova janela de recorte
 
         popup = tk.Toplevel(self.window, padx=5, pady=5)
         labelxmin = tk.Label(popup, text="Coordenada x minima: ")
@@ -605,7 +597,7 @@ class Grid:
         entryz = tk.Entry(popup)
         entry_recuo = tk.Entry(popup)
         entry_dist = tk.Entry(popup)
-        entry_ddmenu = tk.OptionMenu(popup, projection_type, "Ortogonal", "Pespectiva")
+        entry_ddmenu = tk.OptionMenu(popup, projection_type, "Ortogonal", "Pespectiva", "Cavalier", "Cabinet")
 
         labelx.grid(row=1, column=1)
         labely.grid(row=2, column=1)
@@ -630,9 +622,33 @@ class Grid:
                 obj = Projection(pointList, int(entry_recuo.get()))
                 if projection_type.get() == "Ortogonal":
                     obj.ortogonal()
+                elif projection_type.get() == "Cavalier":
+                    obj.cavalier()
+                elif projection_type.get() == "Cabinet":
+                    obj.cabinet()
                 else:
                     obj.perspectiva(int(entry_dist.get()))
-                self.drawFromList(obj.saida)
+
+                projected_points = obj.saida
+
+                # Define as arestas do objeto. Para um cubo com 8 vértices:
+                edges = [
+                    (0, 1), (1, 2), (2, 3), (3, 0), # Face traseira
+                    (4, 5), (5, 6), (6, 7), (7, 4), # Face frontal
+                    (0, 4), (1, 5), (2, 6), (3, 7)  # Arestas de conexão
+                ]
+
+                # Desenha cada aresta do objeto, aplicando o recorte de linha
+                all_edge_points = []
+                for edge in edges:
+                    p1_index, p2_index = edge
+                    if p1_index < len(projected_points) and p2_index < len(projected_points):
+                        p1 = tuple(projected_points[p1_index])
+                        p2 = tuple(projected_points[p2_index])
+                        line_points = cohenSutherland((p1, p2), tuple(self.xBox), tuple(self.yBox))
+                        all_edge_points.extend(line_points)
+
+                self.drawFromList(all_edge_points)
                 pointList = []
                 labelCount.config(text=f"Pontos inseridos: {pointList}")
 
