@@ -1,5 +1,6 @@
 import numpy as np
 import math
+import copy
 
 
 class Rasterizacao:
@@ -100,69 +101,53 @@ class Polilinha(Rasterizacao):
 
 
 class Projection(Rasterizacao):
-    def __init__(self, entrada, recuo):
-        for coordenada in entrada:
-            coordenada[2] += recuo
-        super().__init__(entrada)
+    def __init__(self, entrada, recuo=0):
+        # Cria cópia profunda da lista de pontos e adiciona coordenada homogênea 1
+        self.entrada_original = copy.deepcopy(entrada)
+        self.entrada = [list(ponto) + [1] for ponto in self.entrada_original]
+
+        # Aplica recuo Z para projeções oblíquas (Cavalier, Cabinet)
+        if recuo != 0:
+            for ponto in self.entrada:
+                ponto[2] += recuo
+
+        self.saida = []  # Será preenchido com pontos 2D projetados
 
     def ortogonal(self):
-        for ponto in self.entrada:
-            ponto.append(1)
-
-        matriz_proj = [
-            [0 for i in range(len(self.entrada[0]))]
-            for i in range(len(self.entrada[0]))
-        ]
-
-        missed_diagonal = 2
-        x_saida = 0
-        y_saida = 1
-
-        for i in range(0, len(self.entrada[0])):
-            if i != missed_diagonal:
-                matriz_proj[i][i] = 1
-
-        for point in self.entrada:
-            projecao = np.dot(matriz_proj, point)
-            self.saida.append([projecao[x_saida], projecao[y_saida]])
-
-    def perspectiva(self, dist):
-        for ponto in self.entrada:
-            ponto.append(1)
-
-        matriz_perspectiva = [
-            [0 for i in range(len(self.entrada[0]))]
-            for i in range(len(self.entrada[0]))
-        ]
-
-        for i in range(0, len(self.entrada[0])):
-            if i != len(self.entrada[0]) - 1:
-                matriz_perspectiva[i][i] = dist
-
-        matriz_perspectiva[len(matriz_perspectiva) - 1][len(matriz_perspectiva) - 2] = 1
-
-        for point in self.entrada:
-            projecao = np.dot(matriz_perspectiva, point)
-            projecao = np.multiply(projecao, 1 / point[2])
-            self.saida.append([round(projecao[0]), round(projecao[1])])
-
-    def _oblique(self, L, alpha_deg=45):
-        """
-        Calcula uma projeção oblíqua genérica.
-        L=1 para Cavalier, L=0.5 para Cabinet.
-        """
-        alpha_rad = math.radians(alpha_deg)
-        for ponto in self.entrada:
-            ponto.append(1)
-
-        # Matriz de projeção oblíqua
+        self.saida = []
         matriz_proj = np.array([
-            [1, 0, L * math.cos(alpha_rad), 0],
-            [0, 1, L * math.sin(alpha_rad), 0],
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
             [0, 0, 0, 0],
             [0, 0, 0, 1]
         ])
+        for point in self.entrada:
+            projecao = np.dot(matriz_proj, point)
+            self.saida.append([projecao[0], projecao[1]])
 
+    def perspectiva(self, dist):
+        self.saida = []
+        matriz_perspectiva = np.array([
+            [dist, 0,    0,    0],
+            [0,    dist, 0,    0],
+            [0,    0,    0,    0],
+            [0,    0,    1,    0]
+        ])
+        for point in self.entrada:
+            projecao = np.dot(matriz_perspectiva, point)
+            if projecao[2] != 0:
+                projecao /= projecao[2]
+            self.saida.append([round(projecao[0]), round(projecao[1])])
+
+    def _oblique(self, L, alpha_deg=45):
+        self.saida = []
+        alpha_rad = math.radians(alpha_deg)
+        matriz_proj = np.array([
+            [1, 0, L * math.cos(alpha_rad), 0],
+            [0, 1, L * math.sin(alpha_rad), 0],
+            [0, 0, 0,                      0],
+            [0, 0, 0,                      1]
+        ])
         for point in self.entrada:
             projecao = np.dot(matriz_proj, point)
             self.saida.append([round(projecao[0]), round(projecao[1])])

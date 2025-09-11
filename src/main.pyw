@@ -2,7 +2,7 @@ import tkinter as tk
 from grid import *
 
 window = tk.Tk()
-window.iconphoto(False, tk.PhotoImage(file="src/assets/image.png"))
+# window.iconphoto(False, tk.PhotoImage(file="src/assets/image.png"))
 window.title(string="Primitivas Gráficas")
 
 window.grid_rowconfigure(0, weight=1)
